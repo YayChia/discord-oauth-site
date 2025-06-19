@@ -1,17 +1,11 @@
+// app/layout.tsx
 import './globals.css';
-import AuthProvider from '../components/AuthProvider'; // adjust path if needed
+import { ReactNode } from 'react';
 
-export const metadata = {
-  title: "Your App",
-  description: "OAuth2 App",
-};
-
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        <AuthProvider>{children}</AuthProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
