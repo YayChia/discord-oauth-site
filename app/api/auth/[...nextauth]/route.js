@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 
-const authOptions = {
+const handler = NextAuth({
   providers: [
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID,
@@ -18,10 +18,7 @@ const authOptions = {
 
       const guilds = await res.json();
 
-      if (!Array.isArray(guilds)) {
-        console.error("Invalid guilds response:", guilds);
-        return false;
-      }
+      if (!Array.isArray(guilds)) return false;
 
       const isInBlockedGuild = guilds.some(g => g.id === "1110317468829876234");
       const isInAllowedGuild = guilds.some(g => g.id === "1163448917300629534");
@@ -34,7 +31,6 @@ const authOptions = {
       return session;
     },
   },
-};
+});
 
-const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

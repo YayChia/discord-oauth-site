@@ -1,19 +1,22 @@
-// app/event/page.tsx
-import { getServerSession } from "next-auth";
-import { authOptions } from "../api/auth/[...nextauth]/route";
-import EventContent from "./EventContent";
+import './globals.css'
+import { Inter } from 'next/font/google'
+import AuthProvider from '@/components/AuthProvider'
 
-export default async function EventPage() {
-  const session = await getServerSession(authOptions);
+const inter = Inter({ subsets: ['latin'] })
 
-  if (!session) {
-    return (
-      <div>
-        <h2>Akses Ditolak</h2>
-        <p>Kamu belum login. Silakan <a href="/api/auth/signin">login dengan Discord</a>.</p>
-      </div>
-    );
-  }
+export const metadata = {
+  title: 'Nocturnal Victims Event',
+  description: 'Login with Discord to join the Mobile Legends event.',
+}
 
-  return <EventContent session={session} />;
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body className={inter.className}>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
+    </html>
+  )
 }
