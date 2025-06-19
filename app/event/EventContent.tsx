@@ -3,7 +3,16 @@
 
 import { signOut } from "next-auth/react";
 
-export default function EventContent({ session }: { session: any }) {
+type Props = {
+  session: {
+    user: {
+      name: string;
+      id: string;
+    };
+  };
+};
+
+export default function EventContent({ session }: Props) {
   return (
     <div>
       <h1>Selamat datang, {session.user.name}!</h1>
