@@ -26,7 +26,7 @@ export default function EventClient() {
     <div className="min-h-screen bg-[#0f0f0f] text-white flex items-center justify-center px-4">
       <div className="text-center space-y-6 max-w-md">
         <h1 className="text-3xl font-bold tracking-wide">
-          Selamat Datang, {session.user.name}!
+          Selamat Datang, {session?.user?.name}!
         </h1>
         <p className="text-gray-300">
           Silakan pilih salah satu peran di bawah untuk mendaftar ke event Mobile Legends.
