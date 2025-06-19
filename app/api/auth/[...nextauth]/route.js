@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 
-export const authOptions = {
+const authOptions = {
   providers: [
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID,
@@ -36,6 +36,5 @@ export const authOptions = {
   },
 };
 
-// 👇 EXPORT REQUIRED HTTP METHODS FOR APP ROUTER
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
