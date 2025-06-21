@@ -31,6 +31,11 @@ export const authOptions: NextAuthOptions = {
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID!,
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          scope: "identify guilds",
+        },
+      },
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET!,
@@ -49,11 +54,13 @@ export const authOptions: NextAuthOptions = {
           const guilds: unknown = await res.json();
           if (Array.isArray(guilds)) {
             token.guilds = (guilds as DiscordGuild[]).map(g => g.id);
+            console.log("JWT Callback: User guilds", token.guilds);
           } else {
             token.guilds = [];
+            console.warn("JWT Callback: Guilds response is not an array.");
           }
         } catch (err) {
-          console.error("Error fetching guilds in JWT callback:", err);
+          console.error("JWT Callback: Failed to fetch guilds", err);
           token.guilds = [];
         }
       }
@@ -87,14 +94,15 @@ export const authOptions: NextAuthOptions = {
         if (!Array.isArray(guilds)) return false;
 
         const typedGuilds = guilds as DiscordGuild[];
+        const guildIds = typedGuilds.map(g => g.id);
+        console.log("SignIn Callback: User guilds", guildIds);
 
-        const isInAllowedGuild = typedGuilds.some(g => g.id === "1163448917300629534");
-        const isInBlockedGuild = typedGuilds.some(g => g.id === "1110317468829876234");
+        const isInAllowedGuild = guildIds.includes("1163448917300629534");
+        const isInBlockedGuild = guildIds.includes("1110317468829876234");
 
-        // Only allow if in allowed guild and NOT in blocked guild
         return isInAllowedGuild && !isInBlockedGuild;
       } catch (err) {
-        console.error("Error during signIn guild check:", err);
+        console.error("SignIn Callback: Failed to fetch guilds", err);
         return false;
       }
     },
