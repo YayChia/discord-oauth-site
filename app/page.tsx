@@ -1,26 +1,21 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import './no-access/NoAccess.css';
+import './no-access/WaveBackground.css'; // Reusing wave CSS
 
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
   return (
-    <div className="relative min-h-screen bg-black text-white flex items-center justify-center px-4 overflow-hidden">
-      {/* Fullscreen Animated Wave Background */}
-      <div className="animated-bg-container">
-        <div className="animated-bg">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-            <path d="M0,0 C300,100 900,0 1200,100 L1200,0 L0,0 Z" fill="#0f0f0f" opacity="0.6" />
-          </svg>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-            <path d="M0,0 C300,100 900,0 1200,100 L1200,0 L0,0 Z" fill="#0f0f0f" opacity="0.6" />
-          </svg>
-        </div>
+    <div className="relative min-h-screen text-white flex items-center justify-center px-4 overflow-hidden">
+      {/* Dark Elegant Animated Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="wave"></div>
+        <div className="wave"></div>
+        <div className="wave"></div>
       </div>
 
-      {/* Foreground Login Card */}
+      {/* Foreground Content */}
       <div className="relative z-10 text-center space-y-6 max-w-md w-full border border-gray-700 rounded-2xl p-8 bg-gray-950 bg-opacity-90 shadow-2xl backdrop-blur-md">
         <h1 className="text-4xl font-extrabold tracking-wide text-indigo-400">
           Nocturnal Victims Event
