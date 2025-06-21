@@ -2,7 +2,7 @@
 
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
-import './no-access/WaveBackground.css'; // Make sure this path is correct
+import '../no-access/WaveBackground.css'; // Make sure this path is correct
 
 export default function EventClient() {
   const { data: session } = useSession();
