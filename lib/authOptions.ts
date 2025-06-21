@@ -2,6 +2,7 @@
 import DiscordProvider from "next-auth/providers/discord";
 import { NextAuthOptions } from "next-auth";
 
+// Extend the types for JWT and Session
 declare module "next-auth" {
   interface Session {
     user: {
@@ -38,10 +39,6 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET!,
-  pages: {
-    signIn: "/no-access",
-    error: "/no-access", // 👈 this prevents redirect to /api/auth/error
-  },
   callbacks: {
     async jwt({ token, account }) {
       if (account?.access_token) {
@@ -75,7 +72,11 @@ export const authOptions: NextAuthOptions = {
       if (session.user && typeof token.sub === "string") {
         session.user.id = token.sub;
       }
-      session.guilds = token.guilds;
+
+      if (Array.isArray(token.guilds)) {
+        session.guilds = token.guilds;
+      }
+
       return session;
     },
 
@@ -100,9 +101,11 @@ export const authOptions: NextAuthOptions = {
         const isInBlockedGuild = guildIds.includes("1110317468829876234");
 
         if (isInAllowedGuild && !isInBlockedGuild) {
+          console.log("✅ User is allowed, proceeding with sign-in");
           return true;
         } else {
-          return "/no-access"; // 👈 this avoids the error page and redirects cleanly
+          console.warn("❌ User blocked or not allowed. Redirecting to /no-access");
+          return "/no-access";
         }
       } catch (err) {
         console.error("SignIn Callback: Failed to fetch guilds", err);
