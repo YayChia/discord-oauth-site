@@ -39,7 +39,8 @@ export const authOptions: NextAuthOptions = {
   ],
   secret: process.env.NEXTAUTH_SECRET!,
   pages: {
-    signIn: "/no-access", // 👈 redirect here if `signIn` fails
+    signIn: "/no-access",
+    error: "/no-access", // 👈 this prevents redirect to /api/auth/error
   },
   callbacks: {
     async jwt({ token, account }) {
@@ -55,15 +56,14 @@ export const authOptions: NextAuthOptions = {
 
           const guilds: unknown = await res.json();
           if (Array.isArray(guilds)) {
-            const ids = (guilds as DiscordGuild[]).map(g => g.id);
-            token.guilds = ids;
-            console.log("JWT Callback: User guilds", ids);
+            token.guilds = (guilds as DiscordGuild[]).map(g => g.id);
+            console.log("JWT Callback: User guilds", token.guilds);
           } else {
             token.guilds = [];
-            console.warn("JWT Callback: Response not an array.");
+            console.warn("JWT Callback: Guilds response is not an array.");
           }
         } catch (err) {
-          console.error("JWT Callback Error:", err);
+          console.error("JWT Callback: Failed to fetch guilds", err);
           token.guilds = [];
         }
       }
@@ -75,14 +75,12 @@ export const authOptions: NextAuthOptions = {
       if (session.user && typeof token.sub === "string") {
         session.user.id = token.sub;
       }
-      if (Array.isArray(token.guilds)) {
-        session.guilds = token.guilds;
-      }
+      session.guilds = token.guilds;
       return session;
     },
 
     async signIn({ account }) {
-      if (!account?.access_token) return false;
+      if (!account?.access_token) return "/no-access";
 
       try {
         const res = await fetch("https://discord.com/api/users/@me/guilds", {
@@ -92,18 +90,23 @@ export const authOptions: NextAuthOptions = {
         });
 
         const guilds: unknown = await res.json();
-        if (!Array.isArray(guilds)) return false;
+        if (!Array.isArray(guilds)) return "/no-access";
 
-        const ids = (guilds as DiscordGuild[]).map(g => g.id);
-        console.log("SignIn Callback: User guilds", ids);
+        const typedGuilds = guilds as DiscordGuild[];
+        const guildIds = typedGuilds.map(g => g.id);
+        console.log("SignIn Callback: User guilds", guildIds);
 
-        const isInAllowedGuild = ids.includes("1163448917300629534");
-        const isInBlockedGuild = ids.includes("1110317468829876234");
+        const isInAllowedGuild = guildIds.includes("1163448917300629534");
+        const isInBlockedGuild = guildIds.includes("1110317468829876234");
 
-        return isInAllowedGuild && !isInBlockedGuild;
+        if (isInAllowedGuild && !isInBlockedGuild) {
+          return true;
+        } else {
+          return "/no-access"; // 👈 this avoids the error page and redirects cleanly
+        }
       } catch (err) {
-        console.error("SignIn Callback Error:", err);
-        return false;
+        console.error("SignIn Callback: Failed to fetch guilds", err);
+        return "/no-access";
       }
     },
   },
