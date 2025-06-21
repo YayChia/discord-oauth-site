@@ -1,22 +1,34 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { getToken } from 'next-auth/jwt'
+import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
+import type { NextRequestWithAuth } from "next-auth/middleware";
 
-export async function middleware(request: NextRequest) {
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
+export default withAuth(
+  async function middleware(req: NextRequestWithAuth) {
+    const token = req.nextauth.token;
 
-  // Allow access to public routes (login, home, etc.)
-  if (!request.nextUrl.pathname.startsWith('/event')) return NextResponse.next()
+    if (!token) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
 
-  if (!token) {
-    // Not logged in
-    return NextResponse.redirect(new URL('/login', request.url))
+    const blockedGuildId = "1110317468829876234";
+    const allowedGuildId = "1163448917300629534";
+
+    const guilds = token.guilds as string[] | undefined;
+
+    // If the user is not in allowed guild or is in blocked guild, deny access
+    if (!guilds?.includes(allowedGuildId) || guilds.includes(blockedGuildId)) {
+      return NextResponse.redirect(new URL("/no-access", req.url));
+    }
+
+    return NextResponse.next();
+  },
+  {
+    pages: {
+      signIn: "/login",
+    },
   }
-
-  // Optionally add more checks (e.g., session.user.guilds if you pass that into the token/session)
-  return NextResponse.next()
-}
+);
 
 export const config = {
-  matcher: ['/event/:path*'], // Protect /event and subroutes
-}
+  matcher: ["/event/:path*"],
+};
