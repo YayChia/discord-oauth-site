@@ -1,3 +1,4 @@
+// lib/authOptions.ts
 import DiscordProvider from "next-auth/providers/discord";
 import { NextAuthOptions } from "next-auth";
 
@@ -14,6 +15,7 @@ export const authOptions: NextAuthOptions = {
       if (account) {
         token.accessToken = account.access_token;
 
+        // Fetch guilds from Discord
         const res = await fetch("https://discord.com/api/users/@me/guilds", {
           headers: {
             Authorization: `Bearer ${account.access_token}`,
@@ -22,7 +24,9 @@ export const authOptions: NextAuthOptions = {
 
         const guilds = await res.json();
         if (Array.isArray(guilds)) {
-          token.guilds = (guilds as { id: string }[]).map(g => g.id);
+          token.guilds = guilds.map((g: any) => g.id as string);
+        } else {
+          token.guilds = []; // fallback
         }
       }
 
@@ -31,9 +35,10 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.sub;
+        (session.user as any).id = token.sub;
       }
-      session.guilds = token.guilds;
+
+      session.guilds = token.guilds as string[] | undefined;
       return session;
     },
 
