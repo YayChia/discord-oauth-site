@@ -1,89 +1,65 @@
-import { AuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
+import { NextAuthOptions } from "next-auth";
+import axios from "axios";
 
-const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID!;
-const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET!;
+const allowedGuildId = "1163448917300629534";
+const blockedGuildId = "1110317468829876234";
 
-const ALLOWED_GUILD = "1163448917300629534";
-const BLOCKED_GUILD = "1110317468829876234";
-
-interface DiscordGuild {
-  id: string;
-}
-
-export const authOptions: AuthOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     DiscordProvider({
-      clientId: DISCORD_CLIENT_ID,
-      clientSecret: DISCORD_CLIENT_SECRET,
+      clientId: process.env.DISCORD_CLIENT_ID!,
+      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: "identify guilds email",
+          scope: "identify guilds",
         },
       },
     }),
   ],
-
   callbacks: {
-    async signIn({ account }) {
-      if (!account?.access_token) return false;
-
+    async signIn({ account, profile }) {
       try {
-        const res = await fetch("https://discord.com/api/users/@me/guilds", {
+        const res = await axios.get("https://discord.com/api/users/@me/guilds", {
           headers: {
-            Authorization: `Bearer ${account.access_token}`,
+            Authorization: `Bearer ${account?.access_token}`,
           },
         });
 
-        const guilds: DiscordGuild[] = await res.json();
-
-        if (!Array.isArray(guilds)) {
-          console.warn("⚠️ SignIn Callback: Guilds response is not an array.");
-          return false;
-        }
+        const guilds = res.data as { id: string }[];
 
         const guildIds = guilds.map((g) => g.id);
         console.log("🔎 SignIn Callback: User guilds", guildIds);
 
-        const isInAllowedGuild = guildIds.includes(ALLOWED_GUILD);
-        const isInBlockedGuild = guildIds.includes(BLOCKED_GUILD);
+        const inAllowed = guildIds.includes(allowedGuildId);
+        const inBlocked = guildIds.includes(blockedGuildId);
 
-        if (isInBlockedGuild || !isInAllowedGuild) {
-          console.warn("❌ Access Denied: User in blocked guild or not in allowed guild");
-          throw new Error("/no-access");
+        if (!inAllowed || inBlocked) {
+          console.warn("❌ Access denied due to guild restrictions.");
+          return false;
         }
 
+        // ✅ Store guilds in profile for JWT use
+        (profile as any).guilds = guildIds;
         return true;
-      } catch (err) {
-        if (err instanceof Error && err.message === "/no-access") {
-          return Promise.reject("/no-access");
-        }
-        console.error("❌ SignIn Error", err);
+
+      } catch (error) {
+        console.error("❌ Error fetching guilds:", error);
         return false;
       }
     },
 
-    async jwt({ token, account }) {
-      if (account?.access_token) {
-        try {
-          const res = await fetch("https://discord.com/api/users/@me/guilds", {
-            headers: {
-              Authorization: `Bearer ${account.access_token}`,
-            },
-          });
-
-          const guilds: DiscordGuild[] = await res.json();
-          if (Array.isArray(guilds)) {
-            const guildIds = guilds.map((g) => g.id);
-            token.guilds = guildIds;
-            console.log("✅ JWT Callback: Stored guilds", guildIds);
-          } else {
-            console.warn("⚠️ JWT Callback: Guilds response is not an array.");
-          }
-        } catch (err) {
-          console.error("❌ JWT Callback Error", err);
-        }
+    async jwt({ token, profile }) {
+      if (profile && (profile as any).guilds) {
+        token.guilds = (profile as any).guilds;
       }
+
+      // Ensure token.guilds is always an array
+      if (!Array.isArray(token.guilds)) {
+        console.warn("⚠️ JWT Callback: Guilds response is not an array.", token.guilds);
+        token.guilds = [];
+      }
+
       return token;
     },
 
@@ -92,7 +68,6 @@ export const authOptions: AuthOptions = {
       return session;
     },
   },
-
   pages: {
     error: "/no-access",
   },
