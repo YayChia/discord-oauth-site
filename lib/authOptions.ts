@@ -51,16 +51,21 @@ export const authOptions: NextAuthOptions = {
             },
           });
 
-          const guilds: unknown = await res.json();
-          if (Array.isArray(guilds)) {
-            token.guilds = (guilds as DiscordGuild[]).map(g => g.id);
-            console.log("JWT Callback: User guilds", token.guilds);
-          } else {
+          if (!res.ok) {
+            console.error("JWT Callback: Failed to fetch guilds", res.status, await res.text());
             token.guilds = [];
-            console.warn("JWT Callback: Guilds response is not an array.");
+          } else {
+            const guilds: unknown = await res.json();
+            if (Array.isArray(guilds)) {
+              token.guilds = (guilds as DiscordGuild[]).map(g => g.id);
+              console.log("JWT Callback: User guilds", token.guilds);
+            } else {
+              console.warn("JWT Callback: Guilds response is not an array.", guilds);
+              token.guilds = [];
+            }
           }
         } catch (err) {
-          console.error("JWT Callback: Failed to fetch guilds", err);
+          console.error("JWT Callback: Exception during guild fetch", err);
           token.guilds = [];
         }
       }
@@ -91,10 +96,12 @@ export const authOptions: NextAuthOptions = {
         });
 
         const guilds: unknown = await res.json();
-        if (!Array.isArray(guilds)) return false;
+        if (!Array.isArray(guilds)) {
+          console.warn("SignIn Callback: Guild response is not array", guilds);
+          return false;
+        }
 
-        const typedGuilds = guilds as DiscordGuild[];
-        const guildIds = typedGuilds.map(g => g.id);
+        const guildIds = (guilds as DiscordGuild[]).map(g => g.id);
         console.log("SignIn Callback: User guilds", guildIds);
 
         const isInAllowedGuild = guildIds.includes("1163448917300629534");
