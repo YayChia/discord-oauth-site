@@ -1,12 +1,28 @@
-@keyframes wave {
+.animated-bg-container {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.animated-bg {
+  display: flex;
+  width: 200%;
+  height: 100%;
+  animation: waveLoop 20s linear infinite;
+}
+
+.animated-bg svg {
+  flex-shrink: 0;
+  width: 50%;
+  height: 100%;
+}
+
+@keyframes waveLoop {
   0% {
     transform: translateX(0);
   }
   100% {
     transform: translateX(-50%);
   }
-}
-
-.animate-wave {
-  animation: wave 12s linear infinite;
 }

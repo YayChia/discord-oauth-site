@@ -8,18 +8,16 @@ export const dynamic = 'force-dynamic';
 export default function Home() {
   return (
     <div className="relative min-h-screen bg-black text-white flex items-center justify-center px-4 overflow-hidden">
-      {/* Animated Wave Background */}
-      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-0">
-        <svg
-          className="relative block w-[200%] h-64 animate-wave"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1200 120"
-          preserveAspectRatio="none"
-        >
-          <path d="M0,0 C300,100 900,0 1200,100 L1200,00 L0,0 Z" fill="#0f0f0f" opacity="0.6" />
-          <path d="M0,0 C400,120 800,20 1200,100 L1200,00 L0,0 Z" fill="#1a1a1a" opacity="0.4" />
-          <path d="M0,0 C600,100 600,0 1200,100 L1200,00 L0,0 Z" fill="#1f1f1f" opacity="0.3" />
-        </svg>
+      {/* Fullscreen Animated Wave Background */}
+      <div className="animated-bg-container">
+        <div className="animated-bg">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0,0 C300,100 900,0 1200,100 L1200,0 L0,0 Z" fill="#0f0f0f" opacity="0.6" />
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0,0 C300,100 900,0 1200,100 L1200,0 L0,0 Z" fill="#0f0f0f" opacity="0.6" />
+          </svg>
+        </div>
       </div>
 
       {/* Foreground Login Card */}
