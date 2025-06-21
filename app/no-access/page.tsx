@@ -1,18 +1,15 @@
+import Link from "next/link";
+
 export default function NoAccessPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-black text-white px-4">
-      <div className="text-center max-w-md space-y-4">
-        <h1 className="text-4xl font-bold text-red-500">🚫 Access Denied</h1>
-        <p className="text-lg">
-          You are not permitted to access this event. Please check your Discord access or try logging in again.
+    <div className="min-h-screen flex items-center justify-center bg-black text-white">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-4">🚫 Access Denied</h1>
+        <p className="text-lg">You do not have permission to access this page.</p>
+        <p className="mt-2 text-sm text-gray-400">
+          <Link href="/" className="text-blue-400 underline">Go back home</Link>
         </p>
-        <a
-          href="/"
-          className="inline-block mt-4 rounded bg-white text-black px-4 py-2 font-semibold hover:bg-gray-200 transition"
-        >
-          Return to Home
-        </a>
       </div>
-    </main>
+    </div>
   );
 }

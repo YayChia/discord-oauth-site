@@ -2,6 +2,30 @@
 import DiscordProvider from "next-auth/providers/discord";
 import { NextAuthOptions } from "next-auth";
 
+// Extend the types for JWT and Session
+declare module "next-auth" {
+  interface Session {
+    user: {
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      id?: string;
+    };
+    guilds?: string[];
+  }
+
+  interface JWT {
+    sub?: string;
+    guilds?: string[];
+    accessToken?: string;
+  }
+}
+
+interface DiscordGuild {
+  id: string;
+  [key: string]: unknown; // allow unknown props but only access .id
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     DiscordProvider({
@@ -12,21 +36,22 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET!,
   callbacks: {
     async jwt({ token, account }) {
-      if (account) {
+      if (account?.access_token) {
         token.accessToken = account.access_token;
 
-        // Fetch guilds from Discord
+        // Fetch user's guilds
         const res = await fetch("https://discord.com/api/users/@me/guilds", {
           headers: {
             Authorization: `Bearer ${account.access_token}`,
           },
         });
 
-        const guilds = await res.json();
+        const guilds: DiscordGuild[] = await res.json();
+
         if (Array.isArray(guilds)) {
-          token.guilds = guilds.map((g: any) => g.id as string);
+          token.guilds = guilds.map((g) => g.id);
         } else {
-          token.guilds = []; // fallback
+          token.guilds = [];
         }
       }
 
@@ -35,21 +60,23 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.sub;
+        session.user.id = token.sub;
       }
 
-      session.guilds = token.guilds as string[] | undefined;
+      session.guilds = token.guilds;
       return session;
     },
 
     async signIn({ account }) {
+      if (!account?.access_token) return false;
+
       const res = await fetch("https://discord.com/api/users/@me/guilds", {
         headers: {
-          Authorization: `Bearer ${account?.access_token}`,
+          Authorization: `Bearer ${account.access_token}`,
         },
       });
 
-      const guilds = await res.json();
+      const guilds: DiscordGuild[] = await res.json();
       if (!Array.isArray(guilds)) return false;
 
       const isInAllowedGuild = guilds.some(g => g.id === "1163448917300629534");
