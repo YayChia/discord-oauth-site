@@ -1,24 +1,28 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { signIn } from 'next-auth/react';
+import './NoAccess.css'; // reuse the animated background CSS
+
+export const dynamic = 'force-dynamic';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#0f0f0f] text-white flex items-center justify-center px-4">
-      <div className="text-center space-y-6 max-w-md">
-        <h1 className="text-3xl font-bold tracking-wide">
+    <div className="relative min-h-screen bg-black text-white flex items-center justify-center px-4 overflow-hidden">
+      <div className="absolute inset-0 z-0 animated-bg"></div>
+
+      <div className="relative z-10 text-center space-y-6 max-w-md w-full border border-gray-700 rounded-2xl p-8 bg-gray-950 bg-opacity-90 shadow-2xl backdrop-blur-md">
+        <h1 className="text-4xl font-extrabold tracking-wide text-indigo-400">
           Nocturnal Victims Event
         </h1>
-        <p className="text-gray-300">
-          Selamat datang di event Mobile Legends kami. Silakan login dengan akun Discord Anda untuk melanjutkan pendaftaran.
+        <p className="text-gray-300 text-sm leading-relaxed">
+          Selamat datang di event Mobile Legends kami.<br />
+          Silakan login dengan akun Discord Anda untuk melanjutkan pendaftaran.
         </p>
         <button
           onClick={() => signIn('discord', { callbackUrl: '/event' })}
-          className="bg-indigo-600 hover:bg-indigo-700 transition-colors px-6 py-3 rounded-xl text-lg font-semibold"
+          className="bg-indigo-600 hover:bg-indigo-700 transition-colors px-6 py-3 rounded-full text-base font-semibold shadow-md"
         >
-          Login dengan Discord
+          🔗 Login dengan Discord
         </button>
       </div>
     </div>
