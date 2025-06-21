@@ -1,13 +1,14 @@
 import NextAuth from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 
-const handler = NextAuth({
+export const authOptions = {
   providers: [
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID,
       clientSecret: process.env.DISCORD_CLIENT_SECRET,
     }),
   ],
+  secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async signIn({ account }) {
       const res = await fetch("https://discord.com/api/users/@me/guilds", {
@@ -31,12 +32,7 @@ const handler = NextAuth({
       return session;
     },
   },
-});
-
-export const authOptions = {
-  // ... your providers, callbacks
-  secret: process.env.NEXTAUTH_SECRET,
 };
 
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
-
