@@ -2,7 +2,6 @@
 import DiscordProvider from "next-auth/providers/discord";
 import { NextAuthOptions } from "next-auth";
 
-// Extend the types for JWT and Session
 declare module "next-auth" {
   interface Session {
     user: {
@@ -39,6 +38,9 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET!,
+  pages: {
+    signIn: "/no-access", // 👈 redirect here if `signIn` fails
+  },
   callbacks: {
     async jwt({ token, account }) {
       if (account?.access_token) {
@@ -51,30 +53,18 @@ export const authOptions: NextAuthOptions = {
             },
           });
 
-          if (!res.ok) {
-            console.error("JWT Callback: Failed to fetch guilds", res.status, await res.text());
-            return Promise.reject("/no-access"); // Redirect to /no-access if fetch fails
-          }
-
           const guilds: unknown = await res.json();
-          if (!Array.isArray(guilds)) {
-            console.warn("JWT Callback: Guilds response is not array", guilds);
-            return Promise.reject("/no-access");
-          }
-
-          const guildIds = (guilds as DiscordGuild[]).map(g => g.id);
-          console.log("JWT Callback: User guilds", guildIds);
-          token.guilds = guildIds;
-
-          const isInAllowedGuild = guildIds.includes("1163448917300629534");
-          const isInBlockedGuild = guildIds.includes("1110317468829876234");
-
-          if (!(isInAllowedGuild && !isInBlockedGuild)) {
-            return Promise.reject("/no-access"); // Invalid access, redirect
+          if (Array.isArray(guilds)) {
+            const ids = (guilds as DiscordGuild[]).map(g => g.id);
+            token.guilds = ids;
+            console.log("JWT Callback: User guilds", ids);
+          } else {
+            token.guilds = [];
+            console.warn("JWT Callback: Response not an array.");
           }
         } catch (err) {
-          console.error("JWT Callback: Exception fetching guilds", err);
-          return Promise.reject("/no-access");
+          console.error("JWT Callback Error:", err);
+          token.guilds = [];
         }
       }
 
@@ -85,17 +75,36 @@ export const authOptions: NextAuthOptions = {
       if (session.user && typeof token.sub === "string") {
         session.user.id = token.sub;
       }
-
       if (Array.isArray(token.guilds)) {
         session.guilds = token.guilds;
       }
-
       return session;
     },
 
-    async signIn() {
-      // Let jwt handle all guild validation to avoid rate limit
-      return true;
+    async signIn({ account }) {
+      if (!account?.access_token) return false;
+
+      try {
+        const res = await fetch("https://discord.com/api/users/@me/guilds", {
+          headers: {
+            Authorization: `Bearer ${account.access_token}`,
+          },
+        });
+
+        const guilds: unknown = await res.json();
+        if (!Array.isArray(guilds)) return false;
+
+        const ids = (guilds as DiscordGuild[]).map(g => g.id);
+        console.log("SignIn Callback: User guilds", ids);
+
+        const isInAllowedGuild = ids.includes("1163448917300629534");
+        const isInBlockedGuild = ids.includes("1110317468829876234");
+
+        return isInAllowedGuild && !isInBlockedGuild;
+      } catch (err) {
+        console.error("SignIn Callback Error:", err);
+        return false;
+      }
     },
   },
 };
