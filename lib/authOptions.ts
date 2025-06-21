@@ -39,21 +39,20 @@ export const authOptions: NextAuthOptions = {
       if (account?.access_token) {
         token.accessToken = account.access_token;
 
-        // Fetch user's guilds
-        const res = await fetch("https://discord.com/api/users/@me/guilds", {
-          headers: {
-            Authorization: `Bearer ${account.access_token}`,
-          },
-        });
-
         try {
+          const res = await fetch("https://discord.com/api/users/@me/guilds", {
+            headers: {
+              Authorization: `Bearer ${account.access_token}`,
+            },
+          });
+
           const guilds: unknown = await res.json();
           if (Array.isArray(guilds)) {
             token.guilds = (guilds as DiscordGuild[]).map(g => g.id);
           } else {
             token.guilds = [];
           }
-        } catch (e) {
+        } catch {
           token.guilds = [];
         }
       }
@@ -76,13 +75,13 @@ export const authOptions: NextAuthOptions = {
     async signIn({ account }) {
       if (!account?.access_token) return false;
 
-      const res = await fetch("https://discord.com/api/users/@me/guilds", {
-        headers: {
-          Authorization: `Bearer ${account.access_token}`,
-        },
-      });
-
       try {
+        const res = await fetch("https://discord.com/api/users/@me/guilds", {
+          headers: {
+            Authorization: `Bearer ${account.access_token}`,
+          },
+        });
+
         const guilds: unknown = await res.json();
         if (!Array.isArray(guilds)) return false;
 
@@ -91,7 +90,7 @@ export const authOptions: NextAuthOptions = {
         const isInBlockedGuild = typedGuilds.some(g => g.id === "1110317468829876234");
 
         return isInAllowedGuild && !isInBlockedGuild;
-      } catch (e) {
+      } catch {
         return false;
       }
     },
