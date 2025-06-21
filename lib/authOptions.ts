@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+
 import DiscordProvider from "next-auth/providers/discord";
 import { NextAuthOptions } from "next-auth";
 import axios from "axios";
