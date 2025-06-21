@@ -23,7 +23,7 @@ declare module "next-auth" {
 
 interface DiscordGuild {
   id: string;
-  [key: string]: unknown; // allow unknown props but only access .id
+  [key: string]: unknown;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -46,11 +46,14 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
-        const guilds: DiscordGuild[] = await res.json();
-
-        if (Array.isArray(guilds)) {
-          token.guilds = guilds.map((g) => g.id);
-        } else {
+        try {
+          const guilds: unknown = await res.json();
+          if (Array.isArray(guilds)) {
+            token.guilds = (guilds as DiscordGuild[]).map(g => g.id);
+          } else {
+            token.guilds = [];
+          }
+        } catch (e) {
           token.guilds = [];
         }
       }
@@ -59,11 +62,14 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && typeof token.sub === "string") {
         session.user.id = token.sub;
       }
 
-      session.guilds = token.guilds;
+      if (Array.isArray(token.guilds)) {
+        session.guilds = token.guilds;
+      }
+
       return session;
     },
 
@@ -76,13 +82,18 @@ export const authOptions: NextAuthOptions = {
         },
       });
 
-      const guilds: DiscordGuild[] = await res.json();
-      if (!Array.isArray(guilds)) return false;
+      try {
+        const guilds: unknown = await res.json();
+        if (!Array.isArray(guilds)) return false;
 
-      const isInAllowedGuild = guilds.some(g => g.id === "1163448917300629534");
-      const isInBlockedGuild = guilds.some(g => g.id === "1110317468829876234");
+        const typedGuilds = guilds as DiscordGuild[];
+        const isInAllowedGuild = typedGuilds.some(g => g.id === "1163448917300629534");
+        const isInBlockedGuild = typedGuilds.some(g => g.id === "1110317468829876234");
 
-      return isInAllowedGuild && !isInBlockedGuild;
+        return isInAllowedGuild && !isInBlockedGuild;
+      } catch (e) {
+        return false;
+      }
     },
   },
 };
