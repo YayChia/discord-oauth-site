@@ -1,12 +1,15 @@
 import { AuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
-import { JWT } from "next-auth/jwt";
 
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID!;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET!;
 
 const ALLOWED_GUILD = "1163448917300629534";
 const BLOCKED_GUILD = "1110317468829876234";
+
+interface DiscordGuild {
+  id: string;
+}
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -32,13 +35,14 @@ export const authOptions: AuthOptions = {
           },
         });
 
-        const guilds = await res.json();
+        const guilds: DiscordGuild[] = await res.json();
+
         if (!Array.isArray(guilds)) {
           console.warn("⚠️ SignIn Callback: Guilds response is not an array.");
           return false;
         }
 
-        const guildIds = guilds.map((g: any) => g.id);
+        const guildIds = guilds.map((g) => g.id);
         console.log("🔎 SignIn Callback: User guilds", guildIds);
 
         const isInAllowedGuild = guildIds.includes(ALLOWED_GUILD);
@@ -50,8 +54,8 @@ export const authOptions: AuthOptions = {
         }
 
         return true;
-      } catch (err: any) {
-        if (err.message === "/no-access") {
+      } catch (err) {
+        if (err instanceof Error && err.message === "/no-access") {
           return Promise.reject("/no-access");
         }
         console.error("❌ SignIn Error", err);
@@ -68,9 +72,9 @@ export const authOptions: AuthOptions = {
             },
           });
 
-          const guilds = await res.json();
+          const guilds: DiscordGuild[] = await res.json();
           if (Array.isArray(guilds)) {
-            const guildIds = guilds.map((g: any) => g.id);
+            const guildIds = guilds.map((g) => g.id);
             token.guilds = guildIds;
             console.log("✅ JWT Callback: Stored guilds", guildIds);
           } else {
@@ -84,7 +88,7 @@ export const authOptions: AuthOptions = {
     },
 
     async session({ session, token }) {
-      session.guilds = token.guilds || [];
+      session.guilds = token.guilds ?? [];
       return session;
     },
   },
