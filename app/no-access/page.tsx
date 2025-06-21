@@ -1,7 +1,7 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import './no-access/NoAccess.css';
+import './NoAccess.css';
 
 export const dynamic = 'force-dynamic';
 
