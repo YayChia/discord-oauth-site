@@ -52,7 +52,8 @@ export const authOptions: NextAuthOptions = {
           } else {
             token.guilds = [];
           }
-        } catch {
+        } catch (err) {
+          console.error("Error fetching guilds in JWT callback:", err);
           token.guilds = [];
         }
       }
@@ -86,12 +87,15 @@ export const authOptions: NextAuthOptions = {
         if (!Array.isArray(guilds)) return false;
 
         const typedGuilds = guilds as DiscordGuild[];
+
         const isInAllowedGuild = typedGuilds.some(g => g.id === "1163448917300629534");
         const isInBlockedGuild = typedGuilds.some(g => g.id === "1110317468829876234");
 
+        // Only allow if in allowed guild and NOT in blocked guild
         return isInAllowedGuild && !isInBlockedGuild;
-      } catch {
-        return true;
+      } catch (err) {
+        console.error("Error during signIn guild check:", err);
+        return false;
       }
     },
   },
