@@ -2,18 +2,26 @@
 
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
+import '../no-access/WaveBackground.css'; // Make sure this path is correct
 
 export default function EventClient() {
   const { data: session } = useSession();
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-[#0f0f0f] text-white flex items-center justify-center px-4">
-        <div className="text-center space-y-6 max-w-md">
-          <h2 className="text-2xl font-bold">Akses Ditolak</h2>
-          <p className="text-gray-300">
+      <div className="relative min-h-screen bg-black text-white flex items-center justify-center px-4 overflow-hidden">
+        {/* Wave Background */}
+        <div className="absolute inset-0 z-0">
+          <div className="wave"></div>
+          <div className="wave"></div>
+          <div className="wave"></div>
+        </div>
+
+        <div className="relative z-10 text-center space-y-6 max-w-md w-full border border-gray-700 p-8 rounded-2xl bg-gray-950 bg-opacity-90 shadow-lg backdrop-blur-sm">
+          <h2 className="text-2xl font-bold text-white">🚫 Akses Ditolak</h2>
+          <p className="text-gray-400">
             Kamu belum login.{' '}
-            <Link href="/" className="text-indigo-400 underline">
+            <Link href="/" className="text-white underline hover:text-gray-300 transition">
               Login dengan Discord
             </Link>
           </p>
@@ -23,12 +31,20 @@ export default function EventClient() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] text-white flex items-center justify-center px-4">
-      <div className="text-center space-y-6 max-w-md">
-        <h1 className="text-3xl font-bold tracking-wide">
+    <div className="relative min-h-screen bg-black text-white flex items-center justify-center px-4 overflow-hidden">
+      {/* Wave Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="wave"></div>
+        <div className="wave"></div>
+        <div className="wave"></div>
+      </div>
+
+      {/* Foreground */}
+      <div className="relative z-10 text-center space-y-6 max-w-md w-full border border-gray-700 p-8 rounded-2xl bg-gray-950 bg-opacity-90 shadow-lg backdrop-blur-sm">
+        <h1 className="text-3xl font-extrabold tracking-wide text-white">
           Selamat Datang, {session?.user?.name}!
         </h1>
-        <p className="text-gray-300">
+        <p className="text-gray-400 text-sm">
           Silakan pilih salah satu peran di bawah untuk mendaftar ke event Mobile Legends.
         </p>
         <div className="space-y-4">
@@ -36,24 +52,24 @@ export default function EventClient() {
             href="https://forms.gle/sQ6Vvraipcwb9Rxe6"
             target="_blank"
             rel="noopener noreferrer"
-            className="block bg-green-600 hover:bg-green-700 transition-colors px-6 py-3 rounded-xl text-lg font-semibold"
+            className="block bg-white text-black hover:bg-gray-200 transition-colors px-6 py-3 rounded-full text-base font-semibold shadow-md"
           >
-            Player Sign Up
+            🕹️ Player Sign Up
           </a>
           <a
             href="https://forms.gle/qzmgDXjKs1FdYR8N6"
             target="_blank"
             rel="noopener noreferrer"
-            className="block bg-purple-600 hover:bg-purple-700 transition-colors px-6 py-3 rounded-xl text-lg font-semibold"
+            className="block bg-white text-black hover:bg-gray-200 transition-colors px-6 py-3 rounded-full text-base font-semibold shadow-md"
           >
-            Caster Sign Up
+            🎤 Caster Sign Up
           </a>
         </div>
         <button
           onClick={() => signOut({ callbackUrl: '/' })}
-          className="mt-4 text-sm text-gray-400 hover:underline"
+          className="mt-6 text-sm text-gray-400 hover:text-white hover:underline transition"
         >
-          Sign Out
+          🔓 Sign Out
         </button>
       </div>
     </div>
