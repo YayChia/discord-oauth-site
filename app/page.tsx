@@ -1,15 +1,28 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import './no-access/NoAccess.css'
+import './no-access/NoAccess.css';
 
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
   return (
     <div className="relative min-h-screen bg-black text-white flex items-center justify-center px-4 overflow-hidden">
-      <div className="absolute inset-0 z-0 animated-bg"></div>
+      {/* Animated Wave Background */}
+      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-0">
+        <svg
+          className="relative block w-[200%] h-64 animate-wave"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 1200 120"
+          preserveAspectRatio="none"
+        >
+          <path d="M0,0 C300,100 900,0 1200,100 L1200,00 L0,0 Z" fill="#0f0f0f" opacity="0.6" />
+          <path d="M0,0 C400,120 800,20 1200,100 L1200,00 L0,0 Z" fill="#1a1a1a" opacity="0.4" />
+          <path d="M0,0 C600,100 600,0 1200,100 L1200,00 L0,0 Z" fill="#1f1f1f" opacity="0.3" />
+        </svg>
+      </div>
 
+      {/* Foreground Login Card */}
       <div className="relative z-10 text-center space-y-6 max-w-md w-full border border-gray-700 rounded-2xl p-8 bg-gray-950 bg-opacity-90 shadow-2xl backdrop-blur-md">
         <h1 className="text-4xl font-extrabold tracking-wide text-indigo-400">
           Nocturnal Victims Event
