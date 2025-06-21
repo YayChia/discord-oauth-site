@@ -53,20 +53,28 @@ export const authOptions: NextAuthOptions = {
 
           if (!res.ok) {
             console.error("JWT Callback: Failed to fetch guilds", res.status, await res.text());
-            token.guilds = [];
-          } else {
-            const guilds: unknown = await res.json();
-            if (Array.isArray(guilds)) {
-              token.guilds = (guilds as DiscordGuild[]).map(g => g.id);
-              console.log("JWT Callback: User guilds", token.guilds);
-            } else {
-              console.warn("JWT Callback: Guilds response is not an array.", guilds);
-              token.guilds = [];
-            }
+            return Promise.reject("/no-access"); // Redirect to /no-access if fetch fails
+          }
+
+          const guilds: unknown = await res.json();
+          if (!Array.isArray(guilds)) {
+            console.warn("JWT Callback: Guilds response is not array", guilds);
+            return Promise.reject("/no-access");
+          }
+
+          const guildIds = (guilds as DiscordGuild[]).map(g => g.id);
+          console.log("JWT Callback: User guilds", guildIds);
+          token.guilds = guildIds;
+
+          const isInAllowedGuild = guildIds.includes("1163448917300629534");
+          const isInBlockedGuild = guildIds.includes("1110317468829876234");
+
+          if (!(isInAllowedGuild && !isInBlockedGuild)) {
+            return Promise.reject("/no-access"); // Invalid access, redirect
           }
         } catch (err) {
-          console.error("JWT Callback: Exception during guild fetch", err);
-          token.guilds = [];
+          console.error("JWT Callback: Exception fetching guilds", err);
+          return Promise.reject("/no-access");
         }
       }
 
@@ -85,33 +93,9 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
 
-    async signIn({ account }) {
-      if (!account?.access_token) return false;
-
-      try {
-        const res = await fetch("https://discord.com/api/users/@me/guilds", {
-          headers: {
-            Authorization: `Bearer ${account.access_token}`,
-          },
-        });
-
-        const guilds: unknown = await res.json();
-        if (!Array.isArray(guilds)) {
-          console.warn("SignIn Callback: Guild response is not array", guilds);
-          return false;
-        }
-
-        const guildIds = (guilds as DiscordGuild[]).map(g => g.id);
-        console.log("SignIn Callback: User guilds", guildIds);
-
-        const isInAllowedGuild = guildIds.includes("1163448917300629534");
-        const isInBlockedGuild = guildIds.includes("1110317468829876234");
-
-        return isInAllowedGuild && !isInBlockedGuild;
-      } catch (err) {
-        console.error("SignIn Callback: Failed to fetch guilds", err);
-        return false;
-      }
+    async signIn() {
+      // Let jwt handle all guild validation to avoid rate limit
+      return true;
     },
   },
 };
