@@ -1,94 +1,27 @@
-// lib/authOptions.ts
+import { AuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
-import { NextAuthOptions } from "next-auth";
+import { JWT } from "next-auth/jwt";
 
-// Extend the types for JWT and Session
-declare module "next-auth" {
-  interface Session {
-    user: {
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-      id?: string;
-    };
-    guilds?: string[];
-  }
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID!;
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET!;
 
-  interface JWT {
-    sub?: string;
-    guilds?: string[];
-    accessToken?: string;
-  }
-}
+const ALLOWED_GUILD = "1163448917300629534";
+const BLOCKED_GUILD = "1110317468829876234";
 
-interface DiscordGuild {
-  id: string;
-  [key: string]: unknown;
-}
-
-export const authOptions: NextAuthOptions = {
+export const authOptions: AuthOptions = {
   providers: [
     DiscordProvider({
-      clientId: process.env.DISCORD_CLIENT_ID!,
-      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+      clientId: DISCORD_CLIENT_ID,
+      clientSecret: DISCORD_CLIENT_SECRET,
       authorization: {
         params: {
-          scope: "identify guilds",
+          scope: "identify guilds email",
         },
       },
     }),
   ],
-  secret: process.env.NEXTAUTH_SECRET!,
+
   callbacks: {
-    async jwt({ token, account }) {
-      // Initial login - fetch guilds
-      if (account?.access_token) {
-        token.accessToken = account.access_token;
-
-        try {
-          const res = await fetch("https://discord.com/api/users/@me/guilds", {
-            headers: {
-              Authorization: `Bearer ${account.access_token}`,
-            },
-          });
-
-          const guilds: unknown = await res.json();
-          if (Array.isArray(guilds)) {
-            token.guilds = (guilds as DiscordGuild[]).map(g => g.id);
-            console.log("✅ JWT Callback (login): User guilds", token.guilds);
-          } else {
-            token.guilds = [];
-            console.warn("⚠️ JWT Callback (login): Guilds response is not an array.");
-          }
-        } catch (err) {
-          console.error("❌ JWT Callback (login): Failed to fetch guilds", err);
-          token.guilds = [];
-        }
-      } else {
-        // Subsequent requests: reuse previous token.guilds
-        if (!token.guilds) {
-          token.guilds = [];
-          console.warn("⚠️ JWT Callback (session): Missing token.guilds, defaulting to empty.");
-        } else {
-          console.log("✅ JWT Callback (session): Reused guilds", token.guilds);
-        }
-      }
-
-      return token;
-    },
-
-    async session({ session, token }) {
-      if (session.user && typeof token.sub === "string") {
-        session.user.id = token.sub;
-      }
-
-      if (Array.isArray(token.guilds)) {
-        session.guilds = token.guilds;
-      }
-
-      return session;
-    },
-
     async signIn({ account }) {
       if (!account?.access_token) return false;
 
@@ -99,27 +32,64 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
-        const guilds: unknown = await res.json();
-        if (!Array.isArray(guilds)) return false;
-
-        const typedGuilds = guilds as DiscordGuild[];
-        const guildIds = typedGuilds.map(g => g.id);
-        console.log("🔎 SignIn Callback: User guilds", guildIds);
-
-        const isInAllowedGuild = guildIds.includes("1163448917300629534");
-        const isInBlockedGuild = guildIds.includes("1110317468829876234");
-
-        if (isInAllowedGuild && !isInBlockedGuild) {
-          console.log("✅ User is allowed, proceeding with sign-in");
-          return true;
+        const guilds = await res.json();
+        if (!Array.isArray(guilds)) {
+          console.warn("⚠️ SignIn Callback: Guilds response is not an array.");
+          return false;
         }
 
-        console.warn("❌ User is NOT allowed, blocking sign-in");
-        return false;
-      } catch (err) {
-        console.error("❌ SignIn Callback: Failed to fetch guilds", err);
+        const guildIds = guilds.map((g: any) => g.id);
+        console.log("🔎 SignIn Callback: User guilds", guildIds);
+
+        const isInAllowedGuild = guildIds.includes(ALLOWED_GUILD);
+        const isInBlockedGuild = guildIds.includes(BLOCKED_GUILD);
+
+        if (isInBlockedGuild || !isInAllowedGuild) {
+          console.warn("❌ Access Denied: User in blocked guild or not in allowed guild");
+          throw new Error("/no-access");
+        }
+
+        return true;
+      } catch (err: any) {
+        if (err.message === "/no-access") {
+          return Promise.reject("/no-access");
+        }
+        console.error("❌ SignIn Error", err);
         return false;
       }
     },
+
+    async jwt({ token, account }) {
+      if (account?.access_token) {
+        try {
+          const res = await fetch("https://discord.com/api/users/@me/guilds", {
+            headers: {
+              Authorization: `Bearer ${account.access_token}`,
+            },
+          });
+
+          const guilds = await res.json();
+          if (Array.isArray(guilds)) {
+            const guildIds = guilds.map((g: any) => g.id);
+            token.guilds = guildIds;
+            console.log("✅ JWT Callback: Stored guilds", guildIds);
+          } else {
+            console.warn("⚠️ JWT Callback: Guilds response is not an array.");
+          }
+        } catch (err) {
+          console.error("❌ JWT Callback Error", err);
+        }
+      }
+      return token;
+    },
+
+    async session({ session, token }) {
+      session.guilds = token.guilds || [];
+      return session;
+    },
+  },
+
+  pages: {
+    error: "/no-access",
   },
 };
