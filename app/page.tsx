@@ -1,7 +1,7 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import './NoAccess.css'; // reuse the animated background CSS
+import './no-access/NoAccess.css'
 
 export const dynamic = 'force-dynamic';
 
